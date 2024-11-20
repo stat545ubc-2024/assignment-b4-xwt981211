@@ -218,7 +218,7 @@ top_10_words <- word_counts %>%
 ggplot(top_10_words, aes(x = reorder(word, n), y = n)) +
   geom_bar(stat = "identity", fill = "steelblue") +
   coord_flip() +  # Flip the axes for better readability
-  labs(title = "Top 10 Most Common Words in Sense and Sensibilit",
+  labs(title = "Top 10 Most Common Words in Sense and Sensibility",
        x = "Word",
        y = "Frequency") +
   theme_minimal()
@@ -233,7 +233,7 @@ top_20_words <- word_counts %>%
 ggplot(top_20_words, aes(x = reorder(word, n), y = n)) +
   geom_bar(stat = "identity", fill = "steelblue") +
   coord_flip() +  # Flip the axes for better readability
-  labs(title = "Top 20 Most Common Words in Sense and Sensibilit",
+  labs(title = "Top 20 Most Common Words in Sense and Sensibility",
        x = "Word",
        y = "Frequency") +
   theme_minimal()
@@ -248,7 +248,7 @@ top_30_words <- word_counts %>%
 ggplot(top_30_words, aes(x = reorder(word, n), y = n)) +
   geom_bar(stat = "identity", fill = "steelblue") +
   coord_flip() +  # Flip the axes for better readability
-  labs(title = "Top 30 Most Common Words in Sense and Sensibilit",
+  labs(title = "Top 30 Most Common Words in Sense and Sensibility",
        x = "Word",
        y = "Frequency") +
   theme_minimal()
@@ -512,7 +512,7 @@ test_that("Pig Latin conversion works correctly", {
 })
 ```
 
-    ## Test passed 🥳
+    ## Test passed 😀
 
 ``` r
 test_that("Invalid input raises errors", {
