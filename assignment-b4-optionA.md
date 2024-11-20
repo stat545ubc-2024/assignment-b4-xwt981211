@@ -512,7 +512,7 @@ test_that("Pig Latin conversion works correctly", {
 })
 ```
 
-    ## Test passed 😀
+    ## Test passed 🎉
 
 ``` r
 test_that("Invalid input raises errors", {
