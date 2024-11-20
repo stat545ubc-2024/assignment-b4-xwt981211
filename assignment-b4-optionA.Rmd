@@ -1,0 +1,286 @@
+---
+title: "Assignment-B4-OptionA: Strings and Functional Programming in R"
+author: "Ting Xu"
+output: github_document
+---
+
+# Instruction
+
+This document is an implementation of **Option A** for the assignment-b4, focusing on string manipulation and functional programming in R. The exercises include text analysis (exercise 1), Pig Latin conversion (exercise 2).
+
+### Preparation and External Packages Used
+
+For preparation, we install and load required R packages here at first.
+```{r}
+# Load necessary libraries
+library(janeaustenr)
+library(tidyverse)
+library(tidytext)
+library(ggplot2)
+library(purrr)
+library(testthat)
+```
+
+- `janeaustenr`: For accessing Jane Austen's book, "Pride and Prejudice".
+- `tidyverse`: For general data manipulation and plotting.
+- `tidytext`: For text mining tasks such as tokenization and stop-word removal.
+- `purrr`: For functional programming and applying functions to groups of data.
+
+# Exercise 1: Text Analysis
+
+In this exercise, we are going to take Jane Austen's "Sense and Sensibility", which published in 1811", remove stop words, and plot the most common words. The stopwords we are choosing based on **tidytext::stop_words**. 
+
+## Code
+Firstly, load the book and preview the book cotent.
+```{r}
+# Load the Pride and Prejudice text from the janeaustenr package
+book_data <- janeaustenr:: sensesensibility
+
+# Have a simple glimpse of the book/Preview
+glimpse(book_data)
+print(book_data[1:20])
+```
+Secondly, we need to convert such data (more like sentences) into words, then remove stopwords based on **tidytext**.
+```{r}
+# Convert the character vector to a tibble
+book_data_clean <- tibble(line = 1:length(book_data), book_data = book_data)
+head(book_data_clean)
+
+# Tokenize
+word_data <- book_data_clean %>%
+  unnest_tokens(word, book_data)
+head(word_data)
+
+# View stopwords
+glimpse(tidytext::stop_words)
+
+# Remove stopwords in the data
+word_data_rm <- word_data %>%
+  anti_join(tidytext::stop_words, by ="word")
+head(word_data_rm)
+```
+Thirdly and finally, we counts the most common words (contain top words such as top 10, top 20, top 30), then make some corresponding plots.
+```{r}
+# Count the most common words
+word_counts <- word_data_rm %>%
+  count(word, sort = TRUE)
+print(word_counts)
+# Plot the most common words: 
+# Top 10 most common words
+top_10_words <- word_counts %>%
+  top_n(10, n)
+ggplot(top_10_words, aes(x = reorder(word, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +  # Flip the axes for better readability
+  labs(title = "Top 10 Most Common Words in Sense and Sensibilit",
+       x = "Word",
+       y = "Frequency") +
+  theme_minimal()
+
+# Top 20 most common words
+top_20_words <- word_counts %>%
+  top_n(20, n)
+ggplot(top_20_words, aes(x = reorder(word, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +  # Flip the axes for better readability
+  labs(title = "Top 20 Most Common Words in Sense and Sensibilit",
+       x = "Word",
+       y = "Frequency") +
+  theme_minimal()
+
+# Top 30 most common words
+top_30_words <- word_counts %>%
+  top_n(30, n)
+ggplot(top_30_words, aes(x = reorder(word, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +  # Flip the axes for better readability
+  labs(title = "Top 30 Most Common Words in Sense and Sensibilit",
+       x = "Word",
+       y = "Frequency") +
+  theme_minimal()
+
+```
+
+# Exercise 2: Pig Latin Function
+
+In this exercise, we will create a function that converts words to Pig Latin using custom rules.
+
+## New Pig Latin Rules
+### Rerrange Component
+1. Words starting with vowels (a, e, i, o, u):
+  - Move the last vowel and everything after it to the beginning of the word.
+  - Example: "apple" → "eappl"
+2. Words starting with consonants and have vowels inside the word:
+  - Move all letters before the first vowel to the end of the word.
+  - Example: "string" → "ingstr"
+3. Words without vowels:
+  - Do not rearrange the letters.
+  - Example: "rhythm" → "rhythm"
+  
+### Addition Component
+1. After rearrangement, add a suffix:
+  - Original words starting with vowels: Add "yay".
+    - Examples: "apple" → "eapplyay"
+  - Original words starting with consonants and have vowels inside the word: Add "ay".
+    - Examples: "hello" → "ellohay"
+  - Original words without vowels: Add "xay".
+    - Examples: "rhythm" → "rhythmxay"
+
+## Code
+
+### Function "custom_pig_latin"
+```{r}
+#' Convert words to Pig Latin with updated rules
+#'
+#' This function converts English words into a modified version of Pig Latin.
+#' - Words starting with vowels move the last vowel and its subsequent letters to the front.
+#' - Words starting with consonants move the first consonant cluster to the end.
+#' - Words with no vowels retain their order.
+#' - Adds a suffix ("yay", "ay", or "xay") based on the original word type.
+#' - Add "yay" if original word starts with vowels.
+#' - Add "ay"  if original word starts with consonants and have vowels in it.
+#' - Add "xay" if original word without vowels.
+#'
+#' @param word A character vector of words to convert (could be more than one single word).
+#' @return A character vector of the words converted to Pig Latin.
+#' @examples
+#' custom_pig_latin("hello")  # Returns "ellohay"
+#' custom_pig_latin("apple")  # Returns "eapplyay"
+#' custom_pig_latin(c("rhythm", "apple", "string")) # Returns c("rhythmxay", "eapplyay", "ingstray")
+#' @export
+custom_pig_latin <- function(word) {
+  # Check if the input is a character vector
+  if (!is.character(word)) stop("Input must be a character vector of words.")
+  
+  # Initialize an empty vector to store results
+  result <- vector("character", length(word))
+  
+  # Loop through each word in the input
+  for (i in seq_along(word)) {
+    w <- word[i]
+    
+    # Check for invalid characters
+    if (!grepl("^[A-Za-z]+$", w)) stop("Input should consist of letters only.")
+    
+    # Case 1: Word starts with a vowel
+    if (grepl("^[aeiouAEIOU]", w)) {
+      # Find the position of the last vowel
+      last_vowel_pos <- max(gregexpr("[aeiouAEIOU]", w)[[1]])
+      if (last_vowel_pos > 0) {
+        # Rearrange the word: move the last vowel and its subsequent letters to the front
+        rearranged <- paste0(substr(w, last_vowel_pos, nchar(w)), substr(w, 1, last_vowel_pos - 1))
+        result[i] <- paste0(rearranged, "yay")  # Add "yay"
+      } else {
+        result[i] <- paste0(w, "xay")  # No vowels
+      }
+    }
+    
+    # Case 2: Word starts with a consonant but contains vowels
+    else if (grepl("[aeiouAEIOU]", w)) {
+      # Find the position of the first vowel
+      first_vowel_pos <- regexpr("[aeiouAEIOU]", w)[[1]]
+      consonant_cluster <- substr(w, 1, first_vowel_pos - 1)
+      remainder <- substr(w, first_vowel_pos, nchar(w))
+      rearranged <- paste0(remainder, consonant_cluster)
+      result[i] <- paste0(rearranged, "ay")  # Add "ay"
+    }
+    
+    # Case 3: Word has no vowels
+    else {
+      result[i] <- paste0(w, "xay")
+    }
+  }
+  
+  # Return the result vector
+  return(result)
+}
+
+
+```
+
+### Use Examples
+Case 1: Vowel-Starting Words, words starting with vowels move the last vowel and its subsequent letters to the front, then add "yay" in the end.
+```{r}
+# Vowel-Starting Words
+custom_pig_latin("apple")   # "eapplyay"
+custom_pig_latin("orange")  # "eorangyay"
+custom_pig_latin("eat")     # "ateyay"
+
+```
+
+Case 2: Consonant-Starting Words, words starting with consonants move the first consonant cluster to the end, then add "ay" in the end.
+```{r}
+# Consonant-Starting Words
+custom_pig_latin("hello")   # "ellohay"
+custom_pig_latin("string")  # "ingstray"
+custom_pig_latin("banana")  # "ananabay"
+```
+
+Case 3: Words Without Vowels, words with no vowels retain their order, then add "xay" in the end.
+```{r}
+# Words Without Vowels
+custom_pig_latin("rhythm")  # "rhythmxay"
+custom_pig_latin("pfft")    # "pfftxay"
+custom_pig_latin("xyz")     # "xyzxay"
+```
+
+Case 4: Multiple Words in a Vector
+```{r}
+custom_pig_latin(c("hello", "apple", "rhythm", "string"))
+# Returns: c("ellohay", "eapplyay", "rhythmxay", "ingstray")
+custom_pig_latin("HeLLo")  # "eLLoHay"
+```
+
+Case 5: These will raise errors.
+```{r, error = TRUE}
+# Words with Invalid Characters
+custom_pig_latin("!hello")   # Expect Error: Input should consist of letters only.
+```
+
+Case 6: Edge Cases.
+```{r}
+# Edge Cases
+custom_pig_latin("a")       # "ayay" (single vowel word)
+custom_pig_latin("z")       # "zxay" (single consonant word)
+custom_pig_latin("aeiou")   # "uaeioyay" (all vowels)
+custom_pig_latin("bcdfg")   # "bcdfgxay" (all consonants)
+```
+
+### Test Cases
+```{r}
+# Test cases for validation
+
+test_that("Pig Latin conversion works correctly", {
+  # Vowel-starting words are handled correctly
+  expect_equal(custom_pig_latin("apple"), "eapplyay")
+  expect_equal(custom_pig_latin("orange"), "eorangyay")
+  expect_equal(custom_pig_latin("eat"), "ateyay")
+  
+  # Consonant-starting words are handled correctly
+  expect_equal(custom_pig_latin("hello"), "ellohay")
+  expect_equal(custom_pig_latin("string"), "ingstray")
+  expect_equal(custom_pig_latin("banana"), "ananabay")
+  
+  # Words without vowels are handled correctly
+  expect_equal(custom_pig_latin("rhythm"), "rhythmxay")
+  expect_equal(custom_pig_latin("xyz"), "xyzxay")
+  expect_equal(custom_pig_latin("pfft"), "pfftxay")
+  
+  # Mixed case words are handled correctly
+  expect_equal(custom_pig_latin(c("hello", "apple")), c("ellohay", "eapplyay"))
+  expect_equal(custom_pig_latin("HeLLo"), "eLLoHay")
+  expect_equal(custom_pig_latin(c("APPle", "happy")), c("eAPPlyay", "appyhay"))
+})
+
+
+
+test_that("Invalid input raises errors", {
+  expect_error(custom_pig_latin("123abc"), "Input should consist of letters only.")
+  expect_error(custom_pig_latin(""), "Input should consist of letters only.")
+  expect_error(custom_pig_latin(123), "Input must be a character vector")
+})
+
+
+
+```
+
